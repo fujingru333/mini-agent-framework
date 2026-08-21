@@ -9,10 +9,17 @@ mini-agent-framework/
 │
 ├── README.md
 ├── pyproject.toml
+│
 ├── src/
 │   └── mini_agent/
+│       ├── __init__.py
+│       ├── agent.py      # Agent 核心：编排 LLM 与工具
+│       ├── llm.py        # LLM 客户端抽象
+│       ├── tool.py       # 工具（Tool）抽象
+│       └── prompt.py     # 提示词构建
 │
 └── tests/
+    └── test_agent.py
 ```
 
 ## 开发
