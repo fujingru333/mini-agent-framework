@@ -26,11 +26,13 @@ from mini_agent.memory import SQLiteStorage,PostgreSQLStorage
 
 # storage = SQLiteStorage("agent_memory.db")
 storage = PostgreSQLStorage()
-agent = Agent(DeepSeekLLM(), tools=[calculator],prompt="回答尽量简洁。",storage = storage,session_id="demo-1")
+agent = Agent(DeepSeekLLM(), tools=[calculator],prompt="回答尽量简洁。", storage = storage)
+runtime = agent.create_runtime(session_id="demo-1")
 
-print("第一轮", agent.run("我叫AI"))
-print("第二轮", agent.run("我不叫AI了我叫agent"))
+print("第一轮", runtime.run("我叫AI"))
+print("第二轮", runtime.run("我不叫AI了我叫agent"))
 
-agent2 = Agent(DeepSeekLLM(), tools=[calculator],prompt="回答尽量简洁。",storage = storage,session_id="demo-1")
+agent2 = Agent(DeepSeekLLM(), tools=[calculator],prompt="回答尽量简洁。",storage = storage)
+runtime_b = agent2.create_runtime(session_id="demo-1")
 # result = agent.run("帮我算一下(1+2)*4等于多少？")
-print("重启后：", agent2.run("我到底叫什么？"))
+print("重启后：", runtime_b.run("我到底叫什么？"))
