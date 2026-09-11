@@ -1,4 +1,4 @@
-"""测试迭代三：load_skill 渐进披露 + 动态工具注册。"""
+"""测试迭代三：load_skill 渐进披露（只披露指令，不再注册工具）。"""
 
 import sys
 from pathlib import Path
@@ -7,11 +7,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from mini_agent import Agent
 from mini_agent.skill import Skill
-from mini_agent.tool import Tool
-
-
-def search(query: str) -> str:
-    return f"关于「{query}」的搜索结果..."
 
 
 class ResearchSkill(Skill):
@@ -22,7 +17,6 @@ class ResearchSkill(Skill):
 2. 搜索相关资料
 3. 交叉验证
 4. 总结"""
-    tools = [Tool(name="search", description="搜索资料", func=search)]
 
 
 class CallingModel:
@@ -47,38 +41,24 @@ class CallingModel:
 
 
 def test_progressive():
-    print("1. create_runtime 自动注册 load_skill 工具")
+    print("1. create_runtime 注册 load_skill 工具（全局工具之一）")
     agent = Agent(CallingModel(), skills=[ResearchSkill()], prompt="你是助手")
     rt = agent.create_runtime()
     assert any(s["function"]["name"] == "load_skill" for s in rt.tool_schemas)
-    assert not any(t.name == "search" for t in rt.tools), "未加载前不该有 skill 的工具"
-    print("load_skill 已注册，search 未注册: OK\n")
+    print("load_skill 已注册: OK\n")
 
-    print("2. 模型调用 load_skill：全文进上下文 + 工具动态注册")
+    print("2. 模型调用 load_skill：全文进上下文，工具列表不变")
     out = rt.run("帮我调研一下 Qwen3")
     assert out == "已完成，共2轮"
-    assert any(t.name == "search" for t in rt.tools), "加载后 search 应被注册"
-    assert any(s["function"]["name"] == "search" for s in rt.tool_schemas)
+    assert len(rt.tools) == 1, "加载 skill 不该改变工具列表"
     full = next(m["content"] for m in rt.state.messages
                 if m.get("role") == "tool")
     assert "交叉验证" in full
     print("run 返回:", out)
-    print("动态注册工具:", [t.name for t in rt.tools])
+    print("工具列表(应只有 load_skill):", [t.name for t in rt.tools])
     print("工具结果(节选):", full[:50], "...\n")
 
-    print("3. 工具重名冲突守卫")
-
-    class ConflictSkill(Skill):
-        name = "x"
-        tools = [Tool(name="load_skill", description="抢名字", func=search)]
-    rt2 = agent.create_runtime()
-    try:
-        for t in ConflictSkill().tools:
-            rt2.add_tool(t)
-    except ValueError as e:
-        print("重名报错:", e)
-
-    print("\n迭代三全部通过")
+    print("\n迭代三（解耦版）全部通过")
 
 
 if __name__ == "__main__":

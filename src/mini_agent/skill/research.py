@@ -14,4 +14,4 @@ class ResearchSkill(Skill):
 5. 给出结构化结论"""
     # 有真实的 search / read_file 工具时填进来，例如：
     # tools = [search_tool, read_file_tool]
-    tools = []
+    # tools = []

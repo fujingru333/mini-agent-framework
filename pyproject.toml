@@ -9,5 +9,8 @@ description = "A lightweight Agent framework built from scratch."
 requires-python = ">=3.11"
 dependencies = ["requests"]
 
+[project.optional-dependencies]
+postgres = ["psycopg2"]
+
 [tool.setuptools.packages.find]
 where = ["src"]

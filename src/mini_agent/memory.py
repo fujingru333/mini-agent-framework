@@ -7,8 +7,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import psycopg2
-
 
 class Storage(abc.ABC):
     """存储抽象（"口子"）：Agent 只依赖这个接口，不关心具体数据库。
@@ -89,6 +87,15 @@ class PostgreSQLStorage(Storage):
             password: str = "postgres",
             dbname: str = "agent_db",
     ):
+        # 懒加载：只有真正用 PostgreSQL 才需要 psycopg2，
+        # 不装它也能正常 import 本模块用 SQLiteStorage
+        try:
+            import psycopg2
+        except ImportError:
+            raise ImportError(
+                "使用 PostgreSQLStorage 需要先安装 psycopg2："
+                "pip install 'mini-agent-framework[postgres]'"
+            ) from None
         self.conn = psycopg2.connect(
             host=host, port=port, user=user, password=password, dbname=dbname
         )

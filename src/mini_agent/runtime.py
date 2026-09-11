@@ -46,13 +46,6 @@ class AgentRuntime:
             messages=self._restore_history(sid),
         )
 
-    def add_tool(self, tool) -> None:
-        """动态注册一个工具：load_skill加载一个skill时，把该skill声明的工具逐个注册"""
-        if any(t.name == tool.name for t in self.tools):
-            raise ValueError(f"工具重名：'{tool.name}'")
-        self.tools.append(tool)
-        self.tool_schemas.append(tool.to_schema())
-
     def _restore_history(self,session_id: str) -> list[dict[str, Any]]:
         """从存储恢复会话历史，没有历史就从system消息开始"""
         if self.storage is None:
@@ -71,11 +64,14 @@ class AgentRuntime:
             self.storage.save_message(self.state.session_id, message)
 
     def run(self, user_input: str) -> str:
-        """接收用户输入，调用模型并返回 Agent 的回复。"""
+        """接收用户输入，调用模型并返回 Agent 的回复。
+
+        迭代次数按"本次 run"计算，不跨会话累计：
+        同一个 Runtime 可以多次 run()，每次都是一次独立的新循环。
+        """
         self._remember({"role": "user", "content": user_input})
 
-        while self.state.iteration < self.max_iterations:
-            self.state.iteration += 1
+        for _ in range(self.max_iterations):
             # 发给模型的：完整历史经过上下文管理器处理后的版本
             send_messages = (
                 self.context_manager.manage(self.state.messages)

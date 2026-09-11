@@ -78,31 +78,29 @@ class Agent:
         """创建一个新的会话执行实例:可用skills指定本次会话激活的skill"""
 
         system_prompt = _compose_prompt(self.prompt, self.library)
-        runtime = AgentRuntime(
-            model=self.model,
-            tools=list(self.tools),
-            tool_schemas=[t.to_schema() for t in self.tools],
-            prompt=system_prompt,
-            max_iterations=self.max_iterations,
-            context_manage=self.context_manager,
-            storage=storage if storage is not None else self.storage,
-            session_id=session_id,
-        )
 
-        # 渐进披露：注册load_skill工具
-        # 模型看到索引后，调用它按需加载某个Skill的完整做法
+        # 渐进披露：注册load_skill作为全局工具直接拼进工具列表
+        # 工具全局常驻，skill只负责“喂指令”，不再动态注册工具
         def load_skill(name: str) -> str:
-            skill = self.library.get(name)
-            for t in skill.tools:
-                runtime.add_tool(t)
-            return skill.render()
+            return self.library.get(name).render()
 
-        runtime.add_tool(Tool(
+        tools = [*self.tools, Tool(
             name="load_skill",
             description=(
                 "加载一个 Skill 的完整做法。可用 Skill 见 system prompt 的"
                 " [可用 Skills] 清单，参数 name 传 Skill 名。"
             ),
             func=load_skill,
-        ))
+        )]
+
+        runtime = AgentRuntime(
+            model=self.model,
+            tools=tools,
+            tool_schemas=[t.to_schema() for t in tools],
+            prompt=system_prompt,
+            max_iterations=self.max_iterations,
+            context_manage=self.context_manager,
+            storage=storage if storage is not None else self.storage,
+            session_id=session_id,
+        )
         return runtime

@@ -11,7 +11,10 @@ agent = Agent(FakeModel(), prompt="助手")
 runtime = agent.create_runtime()
 runtime.state = AgentState(
     session_id="test",
-    messages=[{"role": "system", "content": ""}],
-    iteration=9,          # 直接注入"已跑9轮"
+    messages=[
+        {"role": "system", "content": ""},
+        {"role": "user", "content": "第一轮问题"},
+        {"role": "assistant", "content": "第一轮回答"},
+    ],
 )
-print(runtime.run("继续"))  # 第10轮正常返回,不报错
+print(runtime.run("继续"))  # 从注入的历史继续，应收到 4 条消息
